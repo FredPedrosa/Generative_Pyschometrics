@@ -1,31 +1,40 @@
-# Semelhança Estrutural e Cognição Incorporada na Psicometria Generativa da Psicopatologia 🚧
+# A Topologia do Sofrimento Psíquico: Calibração de Instrumentos Psicométricos via Inteligência Artificial Explicável 🧠🤖
 
-Este repositório hospeda os materiais preliminares, rascunhos de texto e fluxos analíticos em desenvolvimento sobre a convergência entre espaços semânticos de Large Language Models (LLMs) e a covariação de sintomas psicopatológicos.
-
-> **Status do Projeto:** Trabalho em progresso (Work in Progress). As análises e o manuscrito estão em fase de revisão e correção.
+Este repositório hospeda os materiais suplementares, conjuntos de dados, modelos preditivos e o protocolo metodológico oficial desenvolvidos no estudo sobre Psicometria Generativa.
 
 ## 🎯 Objetivo do Estudo
 
-Investigar o isomorfismo estrutural entre as arquiteturas fatoriais humanas (DASS-21, PANAS, BDI-II/BAI) e matrizes sintéticas geradas via embeddings. O foco central reside em testar a hipótese da **Cognição Incorporada (Embodied Cognition)**: até que ponto uma IA desincorporada consegue replicar a estrutura de sintomas viscerais e somáticos vs. sintomas puramente ideativos.
+O estudo demonstra que a estrutura latente dos transtornos mentais é uma propriedade emergente codificada na semântica da linguagem. Ao integrar *Large Language Models* (LLMs) à modelagem psicométrica, estabelecemos um benchmark em relação às possibilidades da **Psicometria Generativa** no campo da psicopatologia — um paradigma que permite mapear eixos semiológicos fundamentais e realizar a calibração pré-empírica de instrumentos psicológicos de forma 100% *in silico*.
 
-## 📂 Conteúdo Atual
+## 📂 Estrutura do Repositório
 
-*   **`terceiro Cognição Incorporada...`**: Manuscrito em versão rascunho (*raw text*). Contém a fundamentação teórica sobre o "Teto Semântico" e o "Espelho Platônico" na psicometria.
-*   **`fluxo_analitico.R`**: Script em R contendo a lógica preliminar de processamento, engenharia de atributos (Diferença Absoluta e Produto de Hadamard) e modelos de Machine Learning (Elastic Net, ctree).
+O repositório está organizado para facilitar a reprodutibilidade das análises e a aplicação do protocolo em novos estudos:
 
-## 🛠️ Próximos Passos
+*   📄 **`PsicoGenerativa_Analise.pdf` & `.Rmd`**: Manuscrito do estudo e o script contendo todas as análises originais, incluindo Extração de Atributos, *Explainable AI* (XAI) e *Pseudo-Factor Analysis* (PFA).
+*   📄 **`TabelaS1.docx`**: Material suplementar referenciado no artigo.
+*   📁 **`embeddings/`**: Matrizes de *embeddings* (vetores densos) extraídas via LLMs utilizadas no treinamento dos modelos.
+*   📁 **`modelos_preditivos/`**: Modelos de *Machine Learning* (como o Elastic Net) treinados para prever a covariação de respostas humanas.
+*   📁 **`template/`**: O coração aplicado da pesquisa! Contém o fluxo de trabalho pronto para uso do Protocolo de Psicometria Generativa.
+    *   📄 `template.R`: Script automatizado para purificação e validação estrutural de novos itens.
+    *   📂 **`itens/`**:
+        *   `geração.txt`: *Prompt* e parâmetros utilizados para a criação sintética dos itens.
+        *   `itens_novos.xlsx`: Banco bruto de itens gerados pela IA antes da purificação.
+        *   `itens_escala_final_purificada_com_textos.xlsx`: Escala final após a triagem estrutural via EGA, com os 29 itens retidos e validados.
 
-- [ ] Refino dos modelos de explicabilidade (XAI).
-- [ ] Padronização das visualizações de rede e cargas fatoriais.
-- [ ] Revisão ortográfica e técnica do manuscrito.
-- [ ] Atualização da matriz de correlação sintética para generalização *zero-shot*.
+## 🛠️ O Protocolo de Psicometria Generativa
 
-## 📜 Como Citar (Draft Version)
+O Protocolo é um fluxo de trabalho em ambiente R (disponível na pasta `/template`) criado para auxiliar pesquisadores na validação pré-empírica de escalas. 
 
-Se você utilizar algum insight ou trecho deste material preliminar, por favor cite como:
+Ele permite que você teste o ajuste de um novo corpus de itens antes de aplicá-los em humanos com **Pseudo-CFA baseada em correlação de Spearman** para verificar o ajuste da teoria à representação vetorial.
 
-**Pedrosa, F. (2026). Semelhança Estrutural e Cognição Incorporada na Psicometria Generativa da Psicopatologia. Disponível em: https://github.com/FredPedrosa/Generative_Pyschometrics**
+Para utilizar, basta abrir o `template.R` e seguir as instruções. O script já inclui um verificador automático para instalar os pacotes essenciais (`lavaan`, `embedR`, `semTools`, etc.).
+
+## 📜 Como Citar
+
+Se você utilizar o protocolo AI-GENIE ou qualquer insight/código deste material, por favor, cite como:
+
+**Pedrosa, F. (2026). A Topologia do Sofrimento Psíquico: Calibração de Instrumentos Psicométricos via Inteligência Artificial Explicável. Repositório oficial. Disponível em: https://github.com/FredPedrosa/Generative_Pyschometrics**
 
 ## ⚖️ Licença
 
-Este projeto está licenciado sob a **GPL-3.0 License** - permitindo a colaboração aberta enquanto garante que as derivações permaneçam sob a mesma licença.
+Este projeto está sob a licença **MIT** - o que significa que o código e o protocolo são abertos e livres para uso acadêmico e comercial, desde que a autoria original seja devidamente creditada.
