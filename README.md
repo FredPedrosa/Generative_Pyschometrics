@@ -4,7 +4,7 @@ Este repositório hospeda os materiais suplementares, conjuntos de dados, modelo
 
 ## 🎯 Objetivo do Estudo
 
-O estudo demonstra que a estrutura latente dos transtornos mentais é uma propriedade emergente codificada na semântica da linguagem. Ao integrar *Large Language Models* (LLMs) à modelagem psicométrica, estabelecemos um benchmark em relação às possibilidades da **Psicometria Generativa** no campo da psicopatologia — um paradigma que permite mapear eixos semiológicos fundamentais e realizar a calibração pré-empírica de instrumentos psicológicos de forma 100% *in silico*.
+O estudo demonstra que a estrutura latente dos transtornos mentais é uma propriedade emergente codificada na semântica da linguagem. Ao integrar *Large Language Models* (LLMs) à modelagem psicométrica, estabelecemos um benchmark em relação às possibilidades da **Psicometria Generativa** no campo da psicopatologia — um paradigma que permite mapear eixos semiológicos fundamentais e realizar a calibração pré-empírica de instrumentos psicológicos de forma 100% *in silico* por meio do  protocolo proposto de (Generative Confirmatory Factor Analysis - Gen-CFA).
 
 ## 📂 Estrutura do Repositório
 
@@ -14,16 +14,16 @@ O repositório está organizado para facilitar a reprodutibilidade das análises
 *   📄 **`TabelaS1.docx`**: Material suplementar referenciado no artigo.
 *   📁 **`embeddings/`**: Matrizes de *embeddings* (vetores densos) extraídas via LLMs utilizadas no treinamento dos modelos.
 *   📁 **`modelos_preditivos/`**: Modelos de *Machine Learning* (como o Elastic Net) treinados para prever a covariação de respostas humanas.
-*   📁 **`template/`**: O coração aplicado da pesquisa! Contém o fluxo de trabalho pronto para uso do Protocolo de Psicometria Generativa.
+*   📁 **`template/`**: Contém o fluxo de trabalho pronto para uso do Protocolo Gen-CFA.
     *   📄 `template.R`: Script automatizado para purificação e validação estrutural de novos itens.
     *   📂 **`itens/`**:
         *   `geração.txt`: *Prompt* e parâmetros utilizados para a criação sintética dos itens.
         *   `itens_novos.xlsx`: Banco bruto de itens gerados pela IA antes da purificação.
         *   `itens_escala_final_purificada_com_textos.xlsx`: Escala final após a triagem estrutural via EGA, com os 29 itens retidos e validados.
 
-## 🛠️ O Protocolo de Psicometria Generativa
+## 🛠️ O Protocolo Gen-CFA (Generative CFA)
 
-O Protocolo é um fluxo de trabalho em ambiente R (disponível na pasta `/template`) criado para auxiliar pesquisadores na validação pré-empírica de escalas. 
+O Gen-CFA é um fluxo de trabalho em ambiente R (disponível na pasta `/template`) criado para auxiliar pesquisadores na validação pré-empírica de escalas. 
 
 Ele permite que você teste o ajuste de um novo corpus de itens antes de aplicá-los em humanos com **Pseudo-CFA baseada em correlação de Spearman** para verificar o ajuste da teoria à representação vetorial.
 
