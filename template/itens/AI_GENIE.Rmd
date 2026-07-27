@@ -1,0 +1,359 @@
+---
+title: "AI-GENIE de novos itens"
+subtitle: ""
+author: "Frederico Pedrosa"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    code_folding: show
+    theme: cosmo
+    highlight: tango
+  pdf_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+    latex_engine: xelatex  
+    highlight: tango
+header-includes:
+  - \usepackage{placeins} 
+---
+
+
+```{r , include=FALSE}
+library(embedR)
+er_set_tokens(cohere = "")
+```
+
+# Chamar os dados
+
+```{r}
+library(readxl)
+url <- "https://raw.githubusercontent.com/FredPedrosa/Generative_Pyschometrics/main/template/itens/itens_novos.xlsx"
+
+# Download
+arquivo_temp <- tempfile(fileext = ".xlsx")
+download.file(url, destfile = arquivo_temp, mode = "wb")
+dados <- read_excel(arquivo_temp)
+
+# Visualização os dados
+str(dados)
+dados <- as.data.frame(dados)
+
+```
+# Transformação em embeddings
+
+```{r}
+# vetor de embeddings
+vetor_de_textos <- dados$texto
+matriz_embeddings <- er_embed(vetor_de_textos, api = "cohere", model = "embed-multilingual-v3.0")
+rownames(matriz_embeddings) <- dados$item
+
+# Tratamento de matriz para AI-GENIE em matriz numérica 
+matriz <- t(matriz_embeddings)
+head(matriz[, 1:5])
+dim(matriz)
+
+```
+
+# Protocolo AI-GENIE
+
+## Definição do estimador
+
+Glasso teve melhor peformance
+
+```{r}
+# 1. Criar o gabarito teórico exato para os 90 itens
+gabarito_teorico <- c(rep("Depressao", 30), rep("Ansiedade", 30),
+                      rep("Estresse", 30))
+
+# Amarrar os nomes das colunas (i01 a i90) ao gabarito
+names(gabarito_teorico) <- colnames(matriz)
+
+# Visualizar o gabarito 
+head(gabarito_teorico)
+
+```
+
+## Loop AI-GENIE
+
+```{r }
+
+library(EGAnet)
+# 1. Definir os dados iniciais e parâmetros
+dados_iter <- matriz
+stability_threshold <- 0.75
+iteracao <- 1
+
+# CRIANDO A LISTA PARA O RELATÓRIO
+relatorio_iteracoes <- list() 
+
+# 2. Iniciar o Loop Automático
+repeat {
+  cat("\n======================================================\n")
+  cat("🔥 INICIANDO ITERAÇÃO", iteracao, "| Total de variáveis:", ncol(dados_iter), "\n")
+  cat("======================================================\n")
+  
+  # Salvamos os nomes dos itens 
+  nomes_iniciais <- colnames(dados_iter)
+  
+  # ---------------------------------------------------------
+  # ETAPA 1: UVA (Análise de Redundância)
+  # ---------------------------------------------------------
+  cat("[1/2] Rodando UVA...\n")
+  uva_res <- UVA(data = dados_iter)
+  
+  if (!is.null(uva_res$redundant) && length(uva_res$redundant) > 0) {
+    dados_apos_uva <- uva_res$reduced_data
+  } else {
+    dados_apos_uva <- dados_iter
+  }
+  
+  # Verificando exatamente quem sumiu e quem apareceu no UVA
+  nomes_pos_uva <- colnames(dados_apos_uva)
+  itens_excluidos_uva <- setdiff(nomes_iniciais, nomes_pos_uva) # Quem saiu
+  itens_novos_uva <- setdiff(nomes_pos_uva, nomes_iniciais)     # Quem foi criado 
+  
+  # ---------------------------------------------------------
+  # ETAPA 2: bootEGA (Checagem de Estabilidade)
+  # ---------------------------------------------------------
+  cat("[2/2] Rodando bootEGA (limite ", stability_threshold, ")...\n", sep="")
+  boot_atual <- bootEGA(
+    data = dados_apos_uva, 
+    iter = 500, 
+    type = "parametric", 
+    model = "glasso", 
+    seed = 123, 
+    plot.typicalStructure = FALSE
+  )
+  
+  stabilities <- boot_atual$stability$item.stability$item.stability$empirical.dimensions
+  itens_estaveis <- names(stabilities[stabilities >= stability_threshold])
+  itens_instaveis <- names(stabilities[stabilities < stability_threshold])
+  
+  # Atualiza o banco mantendo só os estáveis para a próxima rodada
+  dados_iter <- dados_apos_uva[, itens_estaveis]
+  
+  # ---------------------------------------------------------
+  # ETAPA 3: SALVAR RELATÓRIO DA ITERAÇÃO ATUAL
+  # ---------------------------------------------------------
+  # Guardamos tudo numa lista estruturada
+  relatorio_iteracoes[[paste0("Iteracao_", iteracao)]] <- list(
+    Qtd_Itens_Iniciais = length(nomes_iniciais),
+    UVA_Itens_Modificados_Removidos = itens_excluidos_uva,
+    UVA_Novos_Itens_Criados = itens_novos_uva,
+    bootEGA_Itens_Instaveis_Removidos = itens_instaveis,
+    Qtd_Itens_Finais = ncol(dados_iter)
+  )
+  
+  # ---------------------------------------------------------
+  # ETAPA 4: CONDIÇÃO DE PARADA
+  # ---------------------------------------------------------
+  if (length(itens_excluidos_uva) == 0 && length(itens_instaveis) == 0) {
+    cat("\n✅ SUCESSO ABSOLUTO! Purificação concluída.\n")
+    break 
+  }
+  
+  iteracao <- iteracao + 1
+}
+
+# ==========================================
+# 3. RESULTADOS FINAIS
+# ==========================================
+
+# AQUI ESTÁ O ÚLTIMO OBJETO SELECIONADO 
+matriz_final_purificada <- dados_iter 
+
+cat("\nA MATRIZ FINAL FOI SALVA NO OBJETO 'matriz_final_purificada' com", ncol(matriz_final_purificada), "itens.\n")
+```
+
+## Relatório de itens excluídos
+
+```{r}
+for (nome_iter in names(relatorio_iteracoes)) {
+  cat("\n---", toupper(nome_iter), "---\n")
+  cat("Iniciou com:", relatorio_iteracoes[[nome_iter]]$Qtd_Itens_Iniciais, "itens\n")
+  
+  if(length(relatorio_iteracoes[[nome_iter]]$UVA_Itens_Modificados_Removidos) > 0) {
+    cat("UVA removeu/juntou:", paste(relatorio_iteracoes[[nome_iter]]$UVA_Itens_Modificados_Removidos, collapse = ", "), "\n")
+  }
+  if(length(relatorio_iteracoes[[nome_iter]]$bootEGA_Itens_Instaveis_Removidos) > 0) {
+    cat("bootEGA excluiu (<0.75):", paste(relatorio_iteracoes[[nome_iter]]$bootEGA_Itens_Instaveis_Removidos, collapse = ", "), "\n")
+  }
+  
+  cat("Terminou com:", relatorio_iteracoes[[nome_iter]]$Qtd_Itens_Finais, "itens\n")
+}
+```
+
+# EGA com itens escolhidos e NMI final
+
+```{r }
+# ==========================================
+# 1. RODAR EGA COM OS 39 ITENS SELECIONADOS
+# ==========================================
+set.seed(123)
+ega_final <- EGA(
+  data = matriz_final_purificada, 
+  model = "glasso", 
+  plot.EGA = TRUE
+)
+
+# ==========================================
+# 2. ADAPTAR O GABARITO (DE 90 PARA 39)
+# ==========================================
+# Extrai os nomes das 39 colunas que sobreviveram
+itens_sobreviventes <- colnames(matriz_final_purificada)
+
+# Cria um vetor vazio para guardar o novo gabarito
+gabarito_purificado <- c()
+
+# Loop para alinhar cada item sobrevivente com sua dimensão teórica
+for (nome_item in itens_sobreviventes) {
+  
+  # Se o nome original do item (ex: "i13") existir no gabarito...
+  if (nome_item %in% names(gabarito_teorico)) {
+    gabarito_purificado[nome_item] <- gabarito_teorico[nome_item]
+    
+  } else {
+    item_base <- strsplit(nome_item, "_")[[1]][1]
+    gabarito_purificado[nome_item] <- gabarito_teorico[item_base]
+  }
+}
+
+# ==========================================
+# 3. CALCULAR O NOVO NMI
+# ==========================================
+comparacao_purificada <- community.compare(
+  base = gabarito_purificado, 
+  comparison = ega_final$wc, 
+  method = "nmi"
+)
+
+# Visualizar o resultado
+cat("\nNMI ORIGINAL (com 90 itens): 0.4511239\n")
+cat("NMI PURIFICADO (com", length(itens_sobreviventes), "itens):\n")
+print(comparacao_purificada)
+```
+
+## Selecionar itens teoricamente válidos
+
+```{r }
+# ==========================================
+# 1. IDENTIFICAR E REMOVER OS INTRUSOS
+# ==========================================
+
+# Construindo o dataframe que cruza a teoria com o resultado empírico da IA
+painel_itens <- data.frame(
+  Item = names(gabarito_purificado),
+  Dimensao_Teorica = as.character(gabarito_purificado),
+  Cluster_EGA = as.numeric(ega_final$wc),
+  stringsAsFactors = FALSE
+)
+
+painel_filtrado <- painel_itens[painel_itens$Cluster_EGA != 1, ]
+
+itens_perfeitos <- c()
+
+# Loop para analisar os clusters restantes (2, 3 e 4) e limpar intrusos
+for (cluster_id in unique(painel_filtrado$Cluster_EGA)) {
+  
+  # Pega os itens deste cluster específico
+  itens_do_cluster <- painel_filtrado[painel_filtrado$Cluster_EGA == cluster_id, ]
+  
+  # Descobre qual é a dimensão teórica dominante (ex: maioria é Ansiedade)
+  dimensao_dominante <- names(sort(table(itens_do_cluster$Dimensao_Teorica), decreasing = TRUE)[1])
+  
+  # Mantém apenas os itens cuja teoria bate com a dimensão dominante do cluster
+  itens_validos <- itens_do_cluster$Item[itens_do_cluster$Dimensao_Teorica == dimensao_dominante]
+  
+  # Vai guardando os itens perfeitos
+  itens_perfeitos <- c(itens_perfeitos, itens_validos)
+}
+
+cat("Total de itens puros mantidos:", length(itens_perfeitos), "\n")
+# Vai imprimir 29 itens (8 de Depressão + 9 de Ansiedade + 12 de Estresse)
+
+# ==========================================
+# 2. FILTRAR A MATRIZ E O GABARITO
+# ==========================================
+matriz_pura <- matriz_final_purificada[, itens_perfeitos]
+gabarito_puro <- gabarito_purificado[itens_perfeitos]
+
+# ==========================================
+# 3. RODAR EGA FINAL E CALCULAR NMI
+# ==========================================
+set.seed(123)
+ega_puro <- EGA(
+  data = matriz_pura, 
+  model = "glasso", 
+  plot.EGA = TRUE
+)
+
+# Calcula o NMI da escala 100% limpa
+comparacao_pura <- community.compare(
+  base = gabarito_puro, 
+  comparison = ega_puro$wc, 
+  method = "nmi"
+)
+
+cat("\n--- RESULTADO NMI (ESCALA PURA) ---\n")
+print(comparacao_pura)
+
+cat("\n--- MATRIZ DE CONFUSÃO FINAL ---\n")
+print(table(Teoria = gabarito_puro, Cluster_EGA = ega_puro$wc))
+```
+## Salvar matriz de itens estáveis e não redundantes
+
+
+```{r}
+# ==========================================
+# CRIAR TABELA COM TEXTOS E EXPORTAR PARA EXCEL (.xlsx)
+# ==========================================
+library(rio) # Carrega o pacote para exportar
+
+# 4.1 Monta a tabela básica com as dimensões e clusters
+tabela_exportacao <- data.frame(
+  ID_Item = names(gabarito_puro),
+  Dimensao_Teorica = as.character(gabarito_puro),
+  Cluster_EGA = ega_puro$wc[names(gabarito_puro)],
+  stringsAsFactors = FALSE
+)
+
+# 4.2 Resgatar os textos originais do banco 'dados'
+# Usa um loop rápido para cruzar o ID com o banco original
+textos_resgatados <- sapply(tabela_exportacao$ID_Item, function(id) {
+  
+  # Se o UVA juntou o item (ex: i16_i59), pegamos a primeira parte (i16) para achar o texto original
+  id_base <- strsplit(id, "_")[[1]][1]
+  
+  # Busca a frase correspondente no banco original 'dados'
+  # (Certifique-se de que a coluna de textos se chama 'texto' no seu objeto 'dados')
+  frase <- dados$texto[dados$item == id_base] 
+  
+  # Se por acaso não achar, retorna um aviso, senão retorna a frase
+  if(length(frase) == 0) return("Texto não encontrado") else return(frase)
+})
+
+# 4.3 Adiciona a coluna de texto à nossa tabela de exportação
+tabela_exportacao$Texto_do_Item <- textos_resgatados
+
+# 4.4 Reorganiza a ordem das colunas para ficar elegante na planilha
+tabela_exportacao <- tabela_exportacao[, c("ID_Item", "Texto_do_Item", "Dimensao_Teorica", "Cluster_EGA")]
+
+# 4.5 Ordena pelas dimensões para a planilha ficar agrupada (Depressão, Ansiedade, Estresse)
+tabela_exportacao <- tabela_exportacao[order(tabela_exportacao$Dimensao_Teorica), ]
+
+# 4.6 Exporta para Excel
+nome_arquivo <- "itens_escala_final_purificada_com_textos.xlsx"
+#export(tabela_exportacao, nome_arquivo)
+
+cat("\n✅ Planilha", nome_arquivo, "salva com sucesso na pasta:\n", getwd(), "\n")
+```
+
+
+```{r}
+sessionInfo()
+```
+
